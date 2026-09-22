@@ -1,0 +1,177 @@
+:root {
+  --bg: #f4f7f4;
+  --surface: #ffffff;
+  --border: #dfe7df;
+  --text: #16241a;
+  --text-muted: #5c6b60;
+  --primary: #2e7d32;
+  --primary-dark: #1b5e20;
+  --danger: #c62828;
+  --ok: #2e7d32;
+  --warn: #f9a825;
+  --crit: #c62828;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1a12;
+    --surface: #16261a;
+    --border: #24382a;
+    --text: #e8f1e9;
+    --text-muted: #9db2a2;
+    --primary: #4caf50;
+    --primary-dark: #66bb6a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.topbar h1 { font-size: 1.25rem; margin: 0; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.status {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eee;
+  color: #555;
+}
+.status--online { background: #e6f4ea; color: var(--ok); }
+.status--offline { background: #fdecea; color: var(--crit); }
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btn--primary { background: var(--primary); color: white; }
+.btn--primary:hover { background: var(--primary-dark); }
+.btn--ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn--danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+
+.panel {
+  margin: 16px 20px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.form-grid label { display: flex; flex-direction: column; font-size: 0.8rem; color: var(--text-muted); gap: 4px; }
+.form-grid input { padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.form-grid .checkbox { flex-direction: row; align-items: center; }
+.form-actions { display: flex; gap: 8px; align-items: end; }
+
+.plants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 20px;
+}
+
+.plant-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.plant-card__header { display: flex; justify-content: space-between; align-items: flex-start; }
+.plant-card__name { margin: 0; font-size: 1.05rem; }
+.plant-card__species { margin: 2px 0 0; font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+
+.health-badge {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eee;
+  color: #666;
+  white-space: nowrap;
+}
+.health-badge--saudavel { background: #e6f4ea; color: var(--ok); }
+.health-badge--atencao { background: #fff6e0; color: var(--warn); }
+.health-badge--critico { background: #fdecea; color: var(--crit); }
+
+.plant-card__photo {
+  height: 140px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.plant-card__photo img { width: 100%; height: 100%; object-fit: cover; }
+.no-photo { font-size: 0.8rem; color: var(--text-muted); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.stat {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat__label { font-size: 0.7rem; color: var(--text-muted); }
+.stat__value { font-size: 1.1rem; font-weight: 600; }
+.stat__moisture--low { color: var(--crit); }
+.stat__moisture--ok { color: var(--ok); }
+.stat__moisture--high { color: #1565c0; }
+
+.plant-card__chart { width: 100%; max-height: 120px; }
+
+.plant-card__updated { margin: 0; font-size: 0.72rem; color: var(--text-muted); }
+
+.plant-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.switch { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--text-muted); }
+
+@media (max-width: 480px) {
+  .topbar { flex-direction: column; align-items: flex-start; }
+}

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitor de Plantas</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2e7d32" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>🌿 Monitor de Plantas</h1>
+    <div class="topbar-actions">
+      <span id="connection-status" class="status status--offline">conectando…</span>
+      <button id="btn-notifications" class="btn btn--ghost">Ativar notificações</button>
+      <button id="btn-new-plant" class="btn btn--primary">+ Nova planta</button>
+    </div>
+  </header>
+
+  <section id="new-plant-panel" class="panel" hidden>
+    <h2>Cadastrar planta</h2>
+    <form id="new-plant-form" class="form-grid">
+      <label>Nome<input name="name" required placeholder="Samambaia da sala" /></label>
+      <label>Espécie<input name="species" placeholder="Nephrolepis exaltata" /></label>
+      <label>Device ID (ESP32)<input name="device_id" required placeholder="esp32-node-1" /></label>
+      <label>Canal<input name="channel" type="number" min="0" required placeholder="0" /></label>
+      <label>Umidade mín. (%)<input name="moisture_min" type="number" min="0" max="100" value="30" /></label>
+      <label>Umidade máx. (%)<input name="moisture_max" type="number" min="0" max="100" value="60" /></label>
+      <label class="checkbox"><input name="auto_water" type="checkbox" checked /> Rega automática</label>
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary">Salvar</button>
+        <button type="button" id="btn-cancel-new-plant" class="btn btn--ghost">Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <main id="plants-grid" class="plants-grid">
+    <p id="empty-state" class="empty-state" hidden>
+      Nenhuma planta cadastrada ainda. Clique em "+ Nova planta" para começar
+      — ou rode <code>npm run simulate</code> no backend para testar com dados falsos.
+    </p>
+  </main>
+
+  <template id="plant-card-template">
+    <article class="plant-card">
+      <header class="plant-card__header">
+        <div>
+          <h3 class="plant-card__name"></h3>
+          <p class="plant-card__species"></p>
+        </div>
+        <span class="health-badge"></span>
+      </header>
+
+      <div class="plant-card__photo">
+        <img alt="Última foto da planta" hidden />
+        <span class="no-photo">Sem foto ainda</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat__label">Umidade do solo</span>
+          <span class="stat__value stat__moisture">--%</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Temperatura</span>
+          <span class="stat__value stat__temp">--°C</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Umidade do ar</span>
+          <span class="stat__value stat__humidity">--%</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Luz</span>
+          <span class="stat__value stat__light">--%</span>
+        </div>
+      </div>
+
+      <canvas class="plant-card__chart" height="120"></canvas>
+
+      <p class="plant-card__updated">Sem leituras ainda</p>
+
+      <footer class="plant-card__actions">
+        <button class="btn btn--primary btn-water">💧 Regar agora</button>
+        <label class="switch">
+          <input type="checkbox" class="toggle-auto-water" />
+          <span>Auto</span>
+        </label>
+        <button class="btn btn--ghost btn-edit">Limiares</button>
+        <button class="btn btn--danger btn-delete">Remover</button>
+      </footer>
+    </article>
+  </template>
+
+  <script src="/vendor/chart.umd.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
