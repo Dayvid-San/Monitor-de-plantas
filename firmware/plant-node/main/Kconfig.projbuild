@@ -1,0 +1,33 @@
+menu "Plant Node Configuration"
+
+    config PLANT_WIFI_SSID
+        string "Wi-Fi SSID"
+        default "minha-rede"
+
+    config PLANT_WIFI_PASSWORD
+        string "Wi-Fi Password"
+        default "minha-senha"
+
+    config PLANT_DEVICE_ID
+        string "ID deste dispositivo (device_id)"
+        default "esp32-node-1"
+        help
+            Precisa bater com o device_id cadastrado no dashboard para cada planta.
+
+    config PLANT_BACKEND_HOST
+        string "Host/IP do backend"
+        default "192.168.1.100"
+
+    config PLANT_BACKEND_PORT
+        int "Porta do backend"
+        default 3000
+
+    config PLANT_READ_INTERVAL_SEC
+        int "Intervalo entre leituras/envios (segundos)"
+        default 60
+
+    config PLANT_COMMAND_POLL_INTERVAL_SEC
+        int "Intervalo de checagem de comandos pendentes (segundos)"
+        default 8
+
+endmenu

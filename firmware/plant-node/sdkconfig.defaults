@@ -1,0 +1,6 @@
+# Wi-Fi em modo station é suficiente; sem Bluetooth para economizar flash/RAM.
+CONFIG_BT_ENABLED=n
+CONFIG_ESP_WIFI_SW_COEXIST_ENABLE=y
+
+# Fila de eventos do http client um pouco maior, evita descarte sob rede lenta.
+CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS=y

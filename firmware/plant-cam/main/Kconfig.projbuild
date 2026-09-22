@@ -1,0 +1,35 @@
+menu "Plant Cam Configuration"
+
+    config PLANT_CAM_WIFI_SSID
+        string "Wi-Fi SSID"
+        default "minha-rede"
+
+    config PLANT_CAM_WIFI_PASSWORD
+        string "Wi-Fi Password"
+        default "minha-senha"
+
+    config PLANT_CAM_ID
+        string "ID desta câmera (camera_id)"
+        default "esp32-cam-1"
+
+    config PLANT_CAM_PLANT_ID
+        int "ID da planta no dashboard associada a esta câmera (-1 = nenhuma)"
+        default -1
+        help
+            Opcional. Se souber o id numérico da planta já cadastrada no
+            dashboard, informe aqui para a foto aparecer vinculada a ela.
+            Deixe -1 para enviar sem vínculo.
+
+    config PLANT_CAM_BACKEND_HOST
+        string "Host/IP do backend"
+        default "192.168.1.100"
+
+    config PLANT_CAM_BACKEND_PORT
+        int "Porta do backend"
+        default 3000
+
+    config PLANT_CAM_CAPTURE_INTERVAL_SEC
+        int "Intervalo entre fotos (segundos)"
+        default 1800
+
+endmenu
