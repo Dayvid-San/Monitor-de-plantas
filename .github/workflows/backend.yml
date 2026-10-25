@@ -1,0 +1,20 @@
+name: Backend
+
+on:
+  push:
+    paths: ['backend/**', 'frontend/**', '.github/workflows/backend.yml']
+  pull_request:
+    paths: ['backend/**', 'frontend/**', '.github/workflows/backend.yml']
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Build e testes
+        run: mvn -B -f backend/pom.xml verify

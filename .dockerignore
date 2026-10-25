@@ -1,0 +1,6 @@
+.git
+backend/target
+backend/data
+firmware
+doc
+doc_agents

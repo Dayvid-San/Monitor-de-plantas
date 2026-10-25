@@ -1,0 +1,26 @@
+# Backend como serviço: sobe no boot e reinicia sozinho se cair.
+#
+# Instalação (exemplo para Raspberry Pi / Linux com systemd):
+#   sudo useradd --system --create-home --home-dir /opt/plant-monitor plantmon
+#   sudo -u plantmon git clone <este repositório> /opt/plant-monitor/app
+#   cd /opt/plant-monitor/app/backend && sudo -u plantmon mvn package -DskipTests
+#   sudo cp deploy/plant-monitor.service /etc/systemd/system/
+#   sudo cp deploy/plant-monitor.env.example /etc/plant-monitor.env   # e edite
+#   sudo systemctl daemon-reload && sudo systemctl enable --now plant-monitor
+#   journalctl -u plant-monitor -f                                    # logs
+[Unit]
+Description=Plant Monitor backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=plantmon
+# O backend serve o frontend de ../frontend, então o diretório de trabalho precisa ser backend/.
+WorkingDirectory=/opt/plant-monitor/app/backend
+EnvironmentFile=-/etc/plant-monitor.env
+ExecStart=/usr/bin/java -Djava.awt.headless=true -jar target/plant-monitor-backend.jar
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
