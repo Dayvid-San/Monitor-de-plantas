@@ -133,7 +133,11 @@ void app_main(void)
 {
     init_effective_config();
 
-    ESP_ERROR_CHECK(wifi_connect_start(CONFIG_PLANT_WIFI_SSID, CONFIG_PLANT_WIFI_PASSWORD));
+    // Sem Wi-Fi no boot não aborta: a rega automática roda offline e as leituras
+    // passam a ser enviadas assim que a reconexão em segundo plano funcionar.
+    if (wifi_connect_start(CONFIG_PLANT_WIFI_SSID, CONFIG_PLANT_WIFI_PASSWORD) != ESP_OK) {
+        ESP_LOGW(TAG, "Iniciando sem Wi-Fi; regra de rega local continua ativa");
+    }
     ESP_ERROR_CHECK(soil_sensor_init());
     ESP_ERROR_CHECK(pump_init_all());
 
