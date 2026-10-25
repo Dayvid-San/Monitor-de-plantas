@@ -28,6 +28,14 @@ Java 17 + Maven, servidor web **Javalin 6** (embutido sobre Jetty), `sqlite-jdbc
 - `Simulator.java` — fake ESP32 completo (leituras + resposta a comandos) usando `java.net.http.HttpClient`, útil para testar sem hardware. Ver `java -jar ... simulate` no `CLAUDE.md` raiz.
 - `data/` — tudo gitignored e gerado em runtime: `plants.db`, `photos/*.jpg`, `vapid.json`.
 
+## Segurança, retenção e testes
+
+- `util/ApiKeyGuard` — se `DEVICE_API_KEY` estiver definida, exige `X-API-Key` em `/api/ingest/*` e `/api/devices/*` (401 com `ctx.skipRemainingHandlers()`; não lançar `UnauthorizedResponse`, o handler `Exception.class` de `App` o transformaria em 500). Rotas do dashboard ficam abertas de propósito.
+- `service/RetentionService` — limpeza diária (leituras 90 d, fotos 30 d + arquivo, eventos 180 d, comandos consumidos 7 d); env `*_RETENTION_DAYS`, `0` desliga. O caminho do arquivo da foto passa por `new File(..).getName()` para nunca sair de `PHOTOS_DIR`.
+- `App.create(apiKey, corsOrigins)` monta o servidor sem iniciar jobs; `App.start()` lê o ambiente, agenda `SchedulerService`/`RetentionService` e sobe. CORS só existe se `CORS_ORIGINS` estiver definida.
+- `Database.init(dataDir)` aceita outro diretório (env `DATA_DIR`, e os testes usam um temporário); `Database.close()` existe para os testes.
+- Testes: `src/test/java` — `TestServer` sobe o app real em porta aleatória. Rode com `mvn test`.
+
 ## Convenções
 
 - Todo acesso a banco passa por `Database.queryAll/queryOne/update` — não introduza um ORM nem um pool de conexões; é um projeto doméstico, uma única `Connection` compartilhada é suficiente (SQLite é single-writer de qualquer forma).

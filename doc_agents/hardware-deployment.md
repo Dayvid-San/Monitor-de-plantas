@@ -46,4 +46,4 @@ O backend roda sempre ligado num computador/Raspberry Pi já existente em casa �
 
 ## Escalando para mais plantas
 
-Um nó ESP32 aguenta confortavelmente até ~6 canais (limitado por pinos ADC1 livres e GPIOs para relé). Para mais plantas, a orientação do projeto é somar um **segundo nó ESP32** com outro `device_id` (não expandir um nó além da contagem de pinos disponíveis) — o backend já é multi-dispositivo por design (`plants.device_id`), não precisa de mudança de código para isso.
+Um nó ESP32 aguenta até **5** canais: há 6 pinos ADC1 úteis num devkit (36, 39, 34, 35, 32, 33) e o LDR consome um deles; os relés precisam de GPIOs livres que não sejam de boot (evite 0, 2, 5, 12, 15). Para mais plantas, a orientação do projeto é somar um **segundo nó ESP32** com outro `device_id` (não expandir um nó além da contagem de pinos disponíveis) — o backend já é multi-dispositivo por design (`plants.device_id`), não precisa de mudança de código para isso.
