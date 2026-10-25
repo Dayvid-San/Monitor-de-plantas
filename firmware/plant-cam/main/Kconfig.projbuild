@@ -28,6 +28,13 @@ menu "Plant Cam Configuration"
         int "Porta do backend"
         default 3000
 
+    config PLANT_CAM_API_KEY
+        string "Chave de API (header X-API-Key)"
+        default ""
+        help
+            Precisa ser igual à variável de ambiente DEVICE_API_KEY do backend.
+            Deixe vazio se o backend não exige chave.
+
     config PLANT_CAM_CAPTURE_INTERVAL_SEC
         int "Intervalo entre fotos (segundos)"
         default 1800

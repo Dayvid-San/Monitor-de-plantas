@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_task_wdt.h"
 
 #include "plant_config.h"
 #include "wifi_connect.h"
@@ -14,11 +15,22 @@
 
 static const char *TAG = "plant_node";
 
+// Trava contra reservatório vazio / mangueira solta: se a bomba já rodou
+// PUMP_MAX_FAILED_CYCLES vezes seguidas sem a umidade voltar a ficar acima do
+// mínimo, a rega AUTOMÁTICA daquele canal para (evita bomba rodando a seco a
+// cada cooldown). Reabilita sozinha quando a umidade volta ao normal, ao receber
+// "Regar agora" no dashboard ou ao reiniciar. Pode ser sobrescrito em plant_config.h.
+#ifndef PUMP_MAX_FAILED_CYCLES
+#define PUMP_MAX_FAILED_CYCLES 3
+#endif
+
 // Estado por canal, atualizado em runtime (a partir do dashboard, quando
 // disponível; caindo para os defaults de plant_config.h quando offline).
 static remote_plant_config_t s_effective[PLANT_CHANNEL_COUNT];
 static int64_t s_last_water_us[PLANT_CHANNEL_COUNT];
 static bool s_watered_since_last_report[PLANT_CHANNEL_COUNT];
+static int s_failed_cycles[PLANT_CHANNEL_COUNT];
+static bool s_lockout_logged[PLANT_CHANNEL_COUNT];
 
 static void init_effective_config(void)
 {
@@ -29,6 +41,8 @@ static void init_effective_config(void)
         s_effective[i].auto_water = true;
         s_last_water_us[i] = 0;
         s_watered_since_last_report[i] = false;
+        s_failed_cycles[i] = 0;
+        s_lockout_logged[i] = false;
     }
 }
 
@@ -68,6 +82,7 @@ static void run_pump_cycle(size_t idx)
     pump_set(cfg->pump_gpio, true);
     for (int elapsed = 0; elapsed < cfg->pump_max_seconds; elapsed++) {
         vTaskDelay(pdMS_TO_TICKS(1000));
+        esp_task_wdt_reset();
         int pct = soil_sensor_read_pct(cfg->soil_adc_channel);
         if (pct >= 0 && pct >= s_effective[idx].moisture_max) break;
     }
@@ -87,7 +102,12 @@ static void handle_pending_commands(void)
     for (size_t i = 0; i < count; i++) {
         if (!commands[i].water_now) continue;
         int idx = find_channel_index(commands[i].channel);
-        if (idx >= 0) run_pump_cycle((size_t)idx);
+        if (idx >= 0) {
+            // Rega manual = o usuário está de olho (ex.: reabasteceu o reservatório): reabilita a rega automática.
+            s_failed_cycles[idx] = 0;
+            s_lockout_logged[idx] = false;
+            run_pump_cycle((size_t)idx);
+        }
     }
 }
 
@@ -109,10 +129,26 @@ static void read_and_report(void)
         bool cooldown_elapsed =
             (esp_timer_get_time() - s_last_water_us[i]) >= ((int64_t)PUMP_COOLDOWN_SEC * 1000000LL);
 
+        if (soil_pct >= s_effective[i].moisture_min) {
+            // Voltou ao normal: a rega funcionou (ou alguém regou), zera a contagem de falhas.
+            s_failed_cycles[i] = 0;
+            s_lockout_logged[i] = false;
+        }
+
         if (s_effective[i].auto_water && soil_pct >= 0 && soil_pct < s_effective[i].moisture_min &&
             cooldown_elapsed) {
-            run_pump_cycle(i);
-            soil_pct = soil_sensor_read_pct(cfg->soil_adc_channel);
+            if (s_failed_cycles[i] >= PUMP_MAX_FAILED_CYCLES) {
+                if (!s_lockout_logged[i]) {
+                    ESP_LOGE(TAG, "Canal %d: %d regas seguidas sem a umidade subir — rega automática suspensa. "
+                                  "Verifique reservatório/mangueira e use \"Regar agora\" para reabilitar.",
+                             cfg->channel, PUMP_MAX_FAILED_CYCLES);
+                    s_lockout_logged[i] = true;
+                }
+            } else {
+                s_failed_cycles[i]++;
+                run_pump_cycle(i);
+                soil_pct = soil_sensor_read_pct(cfg->soil_adc_channel);
+            }
         }
 
         readings[i].channel = cfg->channel;
@@ -144,10 +180,17 @@ void app_main(void)
     ESP_LOGI(TAG, "Plant node \"%s\" pronto, %d canal(is) configurado(s)",
              CONFIG_PLANT_DEVICE_ID, (int)PLANT_CHANNEL_COUNT);
 
+    // Watchdog: se este laço travar (por exemplo preso numa chamada de rede), o chip
+    // reinicia em vez de deixar um relé ligado indefinidamente. Timeout em sdkconfig.defaults (30 s).
+    if (esp_task_wdt_add(NULL) != ESP_OK) {
+        ESP_LOGW(TAG, "Watchdog de tarefa indisponível (apague o sdkconfig e rode 'idf.py reconfigure' para aplicar o sdkconfig.defaults)");
+    }
+
     int64_t next_read_s = 0;
     int64_t next_poll_s = 0;
 
     while (1) {
+        esp_task_wdt_reset();
         int64_t now_s = esp_timer_get_time() / 1000000;
 
         if (now_s >= next_poll_s) {
@@ -155,8 +198,10 @@ void app_main(void)
             next_poll_s = now_s + CONFIG_PLANT_COMMAND_POLL_INTERVAL_SEC;
         }
 
+        esp_task_wdt_reset();
         if (now_s >= next_read_s) {
             refresh_effective_config();
+            esp_task_wdt_reset();
             read_and_report();
             next_read_s = now_s + CONFIG_PLANT_READ_INTERVAL_SEC;
         }

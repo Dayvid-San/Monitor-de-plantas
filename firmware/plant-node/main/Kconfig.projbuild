@@ -22,6 +22,13 @@ menu "Plant Node Configuration"
         int "Porta do backend"
         default 3000
 
+    config PLANT_API_KEY
+        string "Chave de API (header X-API-Key)"
+        default ""
+        help
+            Precisa ser igual à variável de ambiente DEVICE_API_KEY do backend.
+            Deixe vazio se o backend não exige chave.
+
     config PLANT_READ_INTERVAL_SEC
         int "Intervalo entre leituras/envios (segundos)"
         default 60
