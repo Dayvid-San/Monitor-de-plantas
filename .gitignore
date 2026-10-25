@@ -1,0 +1,12 @@
+# Backend (Maven / runtime)
+backend/target/
+backend/dependency-reduced-pom.xml
+backend/data/
+
+# Firmware (ESP-IDF) — gerado ou específico de cada máquina/hardware
+firmware/*/build/
+firmware/*/sdkconfig
+firmware/*/sdkconfig.old
+firmware/*/managed_components/
+firmware/*/dependencies.lock
+firmware/plant-node/main/plant_config.h

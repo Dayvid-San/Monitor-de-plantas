@@ -24,8 +24,9 @@ import java.util.Map;
  * sobre JDBC puro.
  */
 public class Database {
-    public static final String DATA_DIR = "data";
-    public static final String PHOTOS_DIR = DATA_DIR + File.separator + "photos";
+    /** Diretório de dados (plants.db, photos/, vapid.json). Sobrescrevível com a env DATA_DIR. */
+    public static String DATA_DIR = System.getenv().getOrDefault("DATA_DIR", "data");
+    public static String PHOTOS_DIR = DATA_DIR + File.separator + "photos";
 
     private static Connection connection;
 
@@ -37,6 +38,14 @@ public class Database {
     }
 
     public static synchronized void init() {
+        init(DATA_DIR);
+    }
+
+    /** Abre (ou cria) o banco em {@code dataDir}; usado pelos testes com um diretório temporário. */
+    public static synchronized void init(String dataDir) {
+        close();
+        DATA_DIR = dataDir;
+        PHOTOS_DIR = dataDir + File.separator + "photos";
         new File(PHOTOS_DIR).mkdirs();
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + DATA_DIR + File.separator + "plants.db");
@@ -47,6 +56,17 @@ public class Database {
             applySchema();
         } catch (SQLException e) {
             throw new RuntimeException("Falha ao abrir o banco de dados", e);
+        }
+    }
+
+    public static synchronized void close() {
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException ignored) {
+                // nada a fazer: a conexão será descartada de qualquer forma
+            }
+            connection = null;
         }
     }
 

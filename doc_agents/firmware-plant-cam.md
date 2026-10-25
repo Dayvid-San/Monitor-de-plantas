@@ -26,6 +26,10 @@ Não usa nenhuma lib de multipart — monta o boundary (`----plantcamboundary7d8
 
 `FRAMESIZE_SVGA` (800x600), `jpeg_quality = 12` (escala 0–63, menor = melhor), `fb_count = 1`, `CAMERA_GRAB_LATEST`. É aqui que se ajusta resolução/qualidade se o upload estiver lento ou os arquivos grandes demais para a rede/backend.
 
+## Rede
+
+`wifi_connect.c` é idêntico ao do `plant-node`: reconexão sem limite e `wifi_connect_start()` devolve `ESP_ERR_TIMEOUT` (sem abortar) se não conectar em ~30 s; o upload simplesmente falha e é logado até a rede voltar. Kconfig `PLANT_CAM_API_KEY` vira o header `X-API-Key` do upload.
+
 ## Contrato com o backend
 
 `POST /api/ingest/photo`, multipart, campos `camera_id` (sempre) e `plant_id` (se configurado), arquivo no campo `photo`. Ver `doc_agents/backend.md` para o que o servidor faz com isso (heurística de saúde por cor, eventos, push).

@@ -34,6 +34,13 @@ Um único `while(1)` com tick de 1s, dois timers independentes (segundos, via `e
 
 Liga o relé, e a cada 1s (até `pump_max_seconds`, trava de segurança) relê a umidade do canal e para cedo se atingir `moisture_max` — é o único lugar que efetivamente aciona uma bomba.
 
+## Resiliência (offline-first)
+
+- `wifi_connect_start()` espera até ~30 s e devolve `ESP_ERR_TIMEOUT` sem abortar; `app_main` só loga e segue (a rega local não depende de rede). A reconexão em segundo plano não tem limite de tentativas.
+- Watchdog de tarefa (`esp_task_wdt`, 30 s em `sdkconfig.defaults`) cobre o laço principal; `run_pump_cycle()` e o laço chamam `esp_task_wdt_reset()`. `sdkconfig` antigo não herda o default novo — apague-o.
+- Trava de reservatório vazio: `s_failed_cycles[]` conta regas automáticas seguidas sem a umidade voltar a `moisture_min`; ao chegar em `PUMP_MAX_FAILED_CYCLES` (3, sobrescrevível em `plant_config.h`) a rega automática do canal pausa. Zera quando a umidade volta ao normal ou chega `water_now`.
+- Chave de API: Kconfig `PLANT_API_KEY` vira o header `X-API-Key` nas três chamadas de `backend_client.c` (vazia = sem header).
+
 ## Contrato com o backend
 
 Ver `doc_agents/backend.md` para o lado servidor. Resumo do que este firmware fala:

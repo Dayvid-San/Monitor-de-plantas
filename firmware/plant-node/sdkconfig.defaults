@@ -4,3 +4,10 @@ CONFIG_ESP_WIFI_SW_COEXIST_ENABLE=y
 
 # Fila de eventos do http client um pouco maior, evita descarte sob rede lenta.
 CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS=y
+
+# Watchdog de tarefa: reinicia o chip se o laço principal travar (relé não fica ligado para sempre).
+# 30 s cobre o pior caso de um ciclo (chamadas HTTP de 5 s + bombas de até pump_max_seconds, com reset a cada segundo).
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=30
+CONFIG_ESP_TASK_WDT_PANIC=y

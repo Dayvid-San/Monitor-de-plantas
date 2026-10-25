@@ -49,7 +49,7 @@ Só necessário se você comprou o módulo ESP32-CAM.
 ```bash
 cd firmware/plant-cam
 idf.py set-target esp32
-idf.py menuconfig   # configure: Wi-Fi, um nome para a câmera, IP do backend, intervalo entre fotos
+idf.py menuconfig   # configure: Wi-Fi, um nome para a câmera, IP do backend, intervalo entre fotos (e a chave de API, se usar — etapa 8)
 idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
@@ -83,6 +83,11 @@ inicial").
 > navegadores podem recusar ativar essa permissão. Veja
 > [Solução de problemas](solucao-de-problemas.md) se isso acontecer.
 
+> Se você já tinha gravado uma versão anterior e existe um arquivo `sdkconfig`
+> na pasta do firmware, apague-o antes de configurar de novo — ele guarda as
+> opções antigas e ignora as novidades do `sdkconfig.defaults` (como o
+> watchdog do nó de sensores).
+
 ## 6. Acompanhando as plantas fora de casa
 
 Como tudo roda localmente, para ver o dashboard longe da sua rede Wi-Fi você
@@ -91,6 +96,33 @@ simples e segura é uma VPN pessoal como o [Tailscale](https://tailscale.com/),
 instalada tanto no computador que roda o backend quanto no celular — ela cria
 uma rede privada entre os seus aparelhos, sem expor nada publicamente na
 internet.
+
+## 7. Deixando o backend rodando sozinho
+
+Rodar `java -jar ...` num terminal só dura enquanto o terminal estiver aberto.
+Para o backend subir quando o computador liga e reiniciar se cair, use uma destas opções:
+
+- **Linux/Raspberry Pi com systemd:** copie `deploy/plant-monitor.service` e siga as
+  instruções no cabeçalho do arquivo (cria um usuário, compila e ativa o serviço).
+- **Docker:** na raiz do repositório,
+  `docker build -t plant-monitor .` e depois
+  `docker run -d --restart unless-stopped -p 3000:3000 -v plant-data:/app/backend/data plant-monitor`.
+  O volume `plant-data` guarda o banco e as fotos.
+
+As opções (porta, chave de API, por quantos dias guardar fotos e leituras) ficam em
+variáveis de ambiente — veja `deploy/plant-monitor.env.example`. Por padrão,
+leituras são guardadas por 90 dias, fotos por 30 e eventos por 180; a limpeza roda sozinha uma vez por dia.
+
+## 8. Protegendo os ESP32 com uma chave de API (opcional)
+
+Por padrão, qualquer aparelho na sua rede Wi-Fi pode enviar leituras ao backend.
+Para exigir uma senha dos dispositivos:
+
+1. Defina `DEVICE_API_KEY=uma-senha-longa` no ambiente do backend.
+2. Em cada firmware (`idf.py menuconfig`), preencha **Chave de API** com a mesma senha e grave de novo.
+
+O dashboard continua sem login: use só dentro da sua rede ou via VPN (etapa 6), nunca
+exposto direto na internet.
 
 ---
 

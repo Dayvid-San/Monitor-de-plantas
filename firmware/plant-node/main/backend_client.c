@@ -29,6 +29,14 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
+// Só envia o header se uma chave foi configurada (backend sem DEVICE_API_KEY não exige nada).
+static void add_api_key(esp_http_client_handle_t client)
+{
+    if (CONFIG_PLANT_API_KEY[0] != '\0') {
+        esp_http_client_set_header(client, "X-API-Key", CONFIG_PLANT_API_KEY);
+    }
+}
+
 static void build_url(char *out, size_t out_size, const char *path)
 {
     snprintf(out, out_size, "http://%s:%d%s", CONFIG_PLANT_BACKEND_HOST, CONFIG_PLANT_BACKEND_PORT, path);
@@ -72,6 +80,7 @@ esp_err_t backend_send_readings(const char *device_id, float temp_c, float humid
         .timeout_ms = 5000,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    add_api_key(client);
     esp_http_client_set_header(client, "Content-Type", "application/json");
     esp_http_client_set_post_field(client, json_str, strlen(json_str));
 
@@ -110,6 +119,7 @@ esp_err_t backend_fetch_commands(const char *device_id, pending_command_t *out_c
         .event_handler = http_event_handler,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    add_api_key(client);
     esp_err_t err = esp_http_client_perform(client);
     int status = esp_http_client_get_status_code(client);
     esp_http_client_cleanup(client);
@@ -164,6 +174,7 @@ esp_err_t backend_fetch_config(const char *device_id, remote_plant_config_t *out
         .event_handler = http_event_handler,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
+    add_api_key(client);
     esp_err_t err = esp_http_client_perform(client);
     int status = esp_http_client_get_status_code(client);
     esp_http_client_cleanup(client);

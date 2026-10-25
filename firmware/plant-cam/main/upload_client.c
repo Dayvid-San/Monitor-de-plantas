@@ -4,6 +4,7 @@
 #include <string.h>
 #include "esp_http_client.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
 
 static const char *TAG = "upload_client";
 #define BOUNDARY "----plantcamboundary7d81b3"
@@ -49,6 +50,9 @@ esp_err_t upload_photo(const char *host, int port, const char *camera_id, int pl
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_http_client_set_header(client, "Content-Type", "multipart/form-data; boundary=" BOUNDARY);
+    if (CONFIG_PLANT_CAM_API_KEY[0] != '\0') {
+        esp_http_client_set_header(client, "X-API-Key", CONFIG_PLANT_CAM_API_KEY);
+    }
 
     esp_err_t err = esp_http_client_open(client, content_length);
     if (err != ESP_OK) {

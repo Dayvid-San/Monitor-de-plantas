@@ -49,7 +49,10 @@ static esp_err_t camera_init(void)
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK(wifi_connect_start(CONFIG_PLANT_CAM_WIFI_SSID, CONFIG_PLANT_CAM_WIFI_PASSWORD));
+    // Sem Wi-Fi no boot não aborta: o upload falha (e é logado) até a reconexão em segundo plano funcionar.
+    if (wifi_connect_start(CONFIG_PLANT_CAM_WIFI_SSID, CONFIG_PLANT_CAM_WIFI_PASSWORD) != ESP_OK) {
+        ESP_LOGW(TAG, "Iniciando sem Wi-Fi; tentando reconectar em segundo plano");
+    }
     ESP_ERROR_CHECK(camera_init());
 
     ESP_LOGI(TAG, "Plant cam \"%s\" pronta, capturando a cada %ds",

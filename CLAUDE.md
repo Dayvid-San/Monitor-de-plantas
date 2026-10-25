@@ -25,7 +25,15 @@ java -jar target/plant-monitor-backend.jar generate-vapid  # one-time: writes ba
                                                             # Without it, NotificationService logs a warning and push is disabled.
 ```
 
-`Main.java` dispatches on `args[0]` (`start` is the default if omitted) — `App`, `Simulator`, `GenerateVapidKeys` are the three entry points, all bundled into the same jar. There is no test suite or linter configured in this project yet.
+```bash
+mvn test        # JUnit 5: ingest/commands/photo flow, API-key guard, retention (boots the real app on a random port, temp data dir)
+mvn verify      # what CI runs (.github/workflows/backend.yml)
+docker build -t plant-monitor .   # whole-repo image (backend + frontend); systemd alternative in deploy/plant-monitor.service
+```
+
+Optional backend env vars (all unset by default; template in `deploy/plant-monitor.env.example`): `PORT`, `DATA_DIR` (default `data`), `DEVICE_API_KEY` (see decision 10), `CORS_ORIGINS` (default none — the dashboard is same-origin), `READINGS_RETENTION_DAYS`/`PHOTOS_RETENTION_DAYS`/`EVENTS_RETENTION_DAYS` (defaults 90/30/180, `0` disables).
+
+`Main.java` dispatches on `args[0]` (`start` is the default if omitted) — `App`, `Simulator`, `GenerateVapidKeys` are the three entry points, all bundled into the same jar. Backend tests live in `backend/src/test/java` (`TestServer` is the shared harness); there is no linter, and no firmware tests or firmware CI (ESP-IDF isn't available in CI/cloud sessions).
 
 ### Firmware (`firmware/plant-node`, `firmware/plant-cam`)
 
@@ -75,7 +83,13 @@ Decisions baked into the code that matter for making consistent changes:
 
 8. **No ORM.** `Database` (`db/Database.java`) is a thin, synchronous wrapper over plain JDBC (`queryAll`/`queryOne`/`update`, mirroring better-sqlite3's `.all()/.get()/.run()` from before the Java rewrite) — a single shared `Connection`, no pool, no connection-per-request. Keep new queries in that same style rather than introducing a persistence framework.
 
-9. **Gitignored, machine/hardware-specific files must be created locally before running things**: `backend/data/vapid.json` (`java -jar ... generate-vapid`), `firmware/plant-node/main/plant_config.h` (copy from `plant_config.example.h`), and each firmware project's `sdkconfig`/`build/`.
+9. **Gitignored, machine/hardware-specific files must be created locally before running things** (see the root `.gitignore`): `backend/data/vapid.json` (`java -jar ... generate-vapid`), `firmware/plant-node/main/plant_config.h` (copy from `plant_config.example.h`), and each firmware project's `sdkconfig`/`build/`.
+
+10. **Optional device API key.** If the backend env `DEVICE_API_KEY` is set, `ApiKeyGuard` requires header `X-API-Key` on `/api/ingest/*` and `/api/devices/*` (401 otherwise). The firmwares send it from Kconfig `PLANT_API_KEY` / `PLANT_CAM_API_KEY` (empty = no header). Dashboard endpoints (`/api/plants/*`, including `water-now`) are deliberately NOT guarded — the dashboard has no login, so don't expose the backend to the internet.
+
+11. **Data retention.** `RetentionService` (daily, started from `App.start()`, not from `App.create()`) deletes readings/photos(+files)/events/consumed commands older than the configured days. `App.create(apiKey, corsOrigins)` builds the server without starting it or its schedulers — that split exists so tests can boot it.
+
+12. **Firmware keeps going offline-first.** `wifi_connect_start()` waits at most 30 s and returns `ESP_ERR_TIMEOUT` (callers must not abort); reconnection is unlimited in the background. `plant-node` also has a task watchdog (30 s, `sdkconfig.defaults`) and an empty-reservoir lockout: after `PUMP_MAX_FAILED_CYCLES` (3) auto-waterings without moisture reaching `moisture_min`, auto-watering for that channel pauses until moisture recovers, a manual `water_now` arrives, or reboot. Existing `sdkconfig` files don't pick up new `sdkconfig.defaults` — delete `sdkconfig` and reconfigure.
 
 ## Backend request contracts
 

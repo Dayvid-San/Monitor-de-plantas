@@ -23,6 +23,14 @@ Causas comuns:
 - Sensor de umidade fora da terra ou mal posicionado, dando uma leitura que
   não reflete a realidade.
 
+## A rega automática de uma planta parou
+
+Depois de 3 regas automáticas seguidas sem a umidade voltar a ficar acima do mínimo,
+o nó **suspende a rega automática daquela planta** (para a bomba não rodar a seco) e
+registra isso no log serial. Verifique o reservatório e a mangueira e toque em
+**Regar agora** no dashboard: isso reabilita a rega automática. Ela também volta
+sozinha quando a umidade se recupera, ou se o ESP32 for reiniciado.
+
 ## As notificações não chegam no celular
 
 - Confira se você tocou em "Ativar notificações" e aceitou a permissão do
@@ -45,6 +53,11 @@ Causas comuns:
   de 5GHz com o mesmo nome, tente separar os nomes das duas redes nas
   configurações do roteador.
 - Aproxime o ESP32 do roteador para descartar problema de sinal.
+- Se o roteador cair ou reiniciar, o ESP32 reconecta sozinho quando ele voltar —
+  não precisa reiniciar a placa. Sem Wi-Fi, o nó de sensores continua regando
+  pelas regras que tem guardadas, mas as leituras só chegam ao dashboard depois da reconexão.
+- Se o log do ESP32 mostrar `401` ou "chave de API ausente ou inválida", a **Chave de API**
+  do firmware não é igual à `DEVICE_API_KEY` do backend (veja a etapa 8 da [instalação](instalacao.md)).
 
 ## A câmera não tira fotos / trava ao iniciar
 
