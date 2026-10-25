@@ -7,7 +7,9 @@ import com.plantmonitor.routes.IngestController;
 import com.plantmonitor.routes.PlantsController;
 import com.plantmonitor.routes.PushController;
 import com.plantmonitor.service.NotificationService;
+import com.plantmonitor.service.RetentionService;
 import com.plantmonitor.service.SchedulerService;
+import com.plantmonitor.util.ApiKeyGuard;
 import com.plantmonitor.ws.SocketHub;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -25,9 +27,37 @@ public class App {
         Database.init();
         loadVapidKeys();
 
+        Javalin app = create(System.getenv("DEVICE_API_KEY"), System.getenv("CORS_ORIGINS"));
+
+        SchedulerService.start();
+        RetentionService.start();
+
+        app.start(port);
+        System.out.println("Backend do monitor de plantas rodando em http://localhost:" + port);
+        if (System.getenv("DEVICE_API_KEY") == null || System.getenv("DEVICE_API_KEY").isBlank()) {
+            System.out.println("[app] DEVICE_API_KEY não definida: os endpoints dos dispositivos aceitam qualquer origem da rede.");
+        }
+    }
+
+    /**
+     * Monta o servidor (rotas, estáticos, tratamento de erro) sem iniciá-lo nem agendar
+     * jobs — separado de {@link #start()} para os testes subirem numa porta aleatória.
+     * Exige {@link Database#init()} já chamado.
+     *
+     * @param apiKey      chave exigida (header X-API-Key) em /api/ingest e /api/devices; vazio = sem exigência
+     * @param corsOrigins origens permitidas para CORS, separadas por vírgula; vazio = só mesma origem
+     *                    (o dashboard é servido pelo próprio backend, então não precisa de CORS)
+     */
+    public static Javalin create(String apiKey, String corsOrigins) {
         Javalin app = Javalin.create(config -> {
             config.http.maxRequestSize = 6L * 1024 * 1024;
-            config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
+            if (corsOrigins != null && !corsOrigins.isBlank()) {
+                config.bundledPlugins.enableCors(cors -> cors.addRule(rule -> {
+                    for (String origin : corsOrigins.split(",")) {
+                        if (!origin.isBlank()) rule.allowHost(origin.trim());
+                    }
+                }));
+            }
 
             config.staticFiles.add(staticFiles -> {
                 staticFiles.hostedPath = "/";
@@ -42,6 +72,8 @@ public class App {
         });
 
         app.get("/health", ctx -> ctx.json(Map.of("ok", true)));
+
+        ApiKeyGuard.register(app, apiKey);
 
         IngestController.register(app);
         PlantsController.register(app);
@@ -69,10 +101,7 @@ public class App {
             ctx.status(500).json(Map.of("error", "Erro interno do servidor"));
         });
 
-        SchedulerService.start();
-
-        app.start(port);
-        System.out.println("Backend do monitor de plantas rodando em http://localhost:" + port);
+        return app;
     }
 
     private static void loadVapidKeys() {
